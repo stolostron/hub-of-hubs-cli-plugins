@@ -59,7 +59,9 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	cmd.CompletionOptions.DisableDefaultCmd = true
-	cmd.AddCommand(get.NewCmd("kubectl-mc", o.IOStreams))
+	cmd.AddCommand(get.NewCmd("kubectl-mc", o.configFlags, o.IOStreams))
+
+	o.configFlags.AddFlags(cmd.PersistentFlags())
 
 	return cmd
 }

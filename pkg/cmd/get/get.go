@@ -81,6 +81,7 @@ type Options struct {
 	IgnoreNotFound bool
 
 	genericclioptions.IOStreams
+	configFlags *genericclioptions.ConfigFlags
 }
 
 var (
@@ -110,11 +111,13 @@ const (
 )
 
 // NewOptions returns a Options with default chunk size 500.
-func NewOptions(parent string, streams genericclioptions.IOStreams) *Options {
+func NewOptions(parent string, configFlags *genericclioptions.ConfigFlags,
+	streams genericclioptions.IOStreams) *Options {
 	return &Options{
 		PrintFlags: kubectlget.NewGetPrintFlags(),
 		CmdParent:  parent,
 
+		configFlags: configFlags,
 		IOStreams:   streams,
 		ChunkSize:   cmdutil.DefaultChunkSize,
 		ServerPrint: true,
@@ -123,8 +126,9 @@ func NewOptions(parent string, streams genericclioptions.IOStreams) *Options {
 
 // NewCmd creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmd(parent string, streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewOptions(parent, streams)
+func NewCmd(parent string, configFlags *genericclioptions.ConfigFlags,
+	streams genericclioptions.IOStreams) *cobra.Command {
+	o := NewOptions(parent, configFlags, streams)
 
 	cmd := &cobra.Command{
 		Use: fmt.Sprintf("get [(-o|--output=)%s] [NAME | -l label] [flags]",
