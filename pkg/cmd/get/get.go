@@ -130,7 +130,7 @@ func NewCmd(parent string, streams genericclioptions.IOStreams) *cobra.Command {
 		Use: fmt.Sprintf("get [(-o|--output=)%s] [NAME | -l label] [flags]",
 			strings.Join(o.PrintFlags.AllowedFormats(), "|")),
 		DisableFlagsInUseLine: true,
-		Short:                 i18n.T("Display one or many resources"),
+		Short:                 i18n.T("Display one or many managed clusters"),
 		Long:                  getLong,
 		Example:               getExample,
 		Run: func(cmd *cobra.Command, args []string) {
