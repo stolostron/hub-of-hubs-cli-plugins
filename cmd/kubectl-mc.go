@@ -1,8 +1,7 @@
 // Copyright (c) 2021 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
 
 // adopted from https://github.com/kubernetes/sample-cli-plugin/blob/master/cmd/kubectl-ns.go
-
-// Copyright Contributors to the Open Cluster Management project
 
 /*
    Copyright 2018 The Kubernetes Authors.
