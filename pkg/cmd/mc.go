@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stolostron/hub-of-hubs-cli-plugins/pkg/cmd/get"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
 
 var managedClustersExample = `
@@ -50,11 +49,6 @@ func NewManagedClustersOptions(streams genericclioptions.IOStreams) *ManagedClus
 // NewCmdManagedClusters provides a cobra command wrapping ManagedClustersOptions
 func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewManagedClustersOptions(streams)
-
-	defaultConfigFlags := genericclioptions.NewConfigFlags(true).
-		WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).
-		WithDiscoveryQPS(50.0)
-
 	cmd := &cobra.Command{
 		Use:                   "kubectl mc",
 		Short:                 "Operate managed clusters for Hub of Hubs",
@@ -64,19 +58,7 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	cmd.CompletionOptions.DisableDefaultCmd = true
-	flags := cmd.PersistentFlags()
-
-	kubeConfigFlags := o.configFlags
-	if kubeConfigFlags == nil {
-		kubeConfigFlags = defaultConfigFlags
-	}
-	kubeConfigFlags.AddFlags(flags)
-	matchVersionKubeConfigFlags := cmdutil.NewMatchVersionFlags(kubeConfigFlags)
-	matchVersionKubeConfigFlags.AddFlags(flags)
-
-	f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
-
-	cmd.AddCommand(get.NewCmd("kubectl", f, o.IOStreams))
+	cmd.AddCommand(get.NewCmd("kubectl", o.IOStreams))
 
 	return cmd
 }
