@@ -75,7 +75,7 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 
 	f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
 
-	cmd.AddCommand(get.NewCmdGet("kubectl", f, o.IOStreams))
+	cmd.AddCommand(get.NewCmd("kubectl", f, o.IOStreams))
 
 	return cmd
 }
