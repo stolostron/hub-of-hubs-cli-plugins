@@ -142,7 +142,7 @@ func NewCmd(parent string, f cmdutil.Factory, streams genericclioptions.IOStream
 			strings.Join(o.PrintFlags.AllowedFormats(), "|")),
 		DisableFlagsInUseLine: true,
 		Short:                 i18n.T("Display one or many resources"),
-		Long:                  getLong + "\n\n" + cmdutil.SuggestAPIResources(parent),
+		Long:                  getLong,
 		Example:               getExample,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			var comps []string
