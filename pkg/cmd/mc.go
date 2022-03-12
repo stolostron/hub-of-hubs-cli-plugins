@@ -22,9 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stolostron/hub-of-hubs-cli-plugins/pkg/cmd/get"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	kubectl "k8s.io/kubectl/pkg/cmd"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
-	"k8s.io/kubectl/pkg/util/templates"
 )
 
 var managedClustersExample = `
@@ -76,26 +74,7 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 
 	f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
 
-	groups := templates.CommandGroups{
-		{
-			Message: "Basic Commands:",
-			Commands: []*cobra.Command{
-				get.NewCmdGet("kubectl", f, o.IOStreams),
-			},
-		},
-	}
-
-	groups.Add(cmd)
-
-	filters := []string{"options"}
-
-	// Hide the "alpha" subcommand if there are no alpha commands in this build.
-	alpha := kubectl.NewCmdAlpha(f, o.IOStreams)
-	if !alpha.HasSubCommands() {
-		filters = append(filters, alpha.Name())
-	}
-
-	templates.ActsAsRootCommand(cmd, filters, groups...)
+	cmd.AddCommand(get.NewCmdGet("kubectl", f, o.IOStreams))
 
 	return cmd
 }
