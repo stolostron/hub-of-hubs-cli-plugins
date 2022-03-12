@@ -56,10 +56,11 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 		WithDiscoveryQPS(50.0)
 
 	cmd := &cobra.Command{
-		Use:     "kubectl mc",
-		Short:   "Operate managed clusters for Hub of Hubs",
-		Example: fmt.Sprintf(managedClustersExample, "kubectl"),
-		Run:     runHelp,
+		Use:                   "kubectl mc",
+		Short:                 "Operate managed clusters for Hub of Hubs",
+		DisableFlagsInUseLine: true,
+		Example:               fmt.Sprintf(managedClustersExample, "kubectl"),
+		Run:                   runHelp,
 	}
 
 	cmd.CompletionOptions.DisableDefaultCmd = true
