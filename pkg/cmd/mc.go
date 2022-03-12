@@ -26,10 +26,10 @@ import (
 
 var managedClustersExample = `
 	# view managed clusters
-	%[1]s mc get
+	%[1]s get
 
 	# label a managed cluster
-	%[1]s mc label mycluster environment=dev
+	%[1]s label mycluster environment=dev
 `
 
 // ManagedClustersOptions provides options for ManagedClusters commands
@@ -50,15 +50,16 @@ func NewManagedClustersOptions(streams genericclioptions.IOStreams) *ManagedClus
 func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewManagedClustersOptions(streams)
 	cmd := &cobra.Command{
-		Use:                   "kubectl mc",
-		Short:                 "Operate managed clusters for Hub of Hubs",
+		Use: "kubectl-mc",
+		Short: "Operate managed clusters for Hub of Hubs\n\n" +
+			"Can be used as 'kubectl mc' or 'kubectl-mc'",
 		DisableFlagsInUseLine: true,
-		Example:               fmt.Sprintf(managedClustersExample, "kubectl"),
+		Example:               fmt.Sprintf(managedClustersExample, "kubectl-mc"),
 		Run:                   runHelp,
 	}
 
 	cmd.CompletionOptions.DisableDefaultCmd = true
-	cmd.AddCommand(get.NewCmd("kubectl", o.IOStreams))
+	cmd.AddCommand(get.NewCmd("kubectl-mc", o.IOStreams))
 
 	return cmd
 }

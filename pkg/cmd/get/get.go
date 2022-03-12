@@ -95,13 +95,13 @@ var (
 
 	getExample = templates.Examples(i18n.T(`
 		# List all managed clusters in ps output format
-		kubectl mc get
+		kubectl-mc get
 
 		# List a single managed cluster with specified NAME in ps output format
-		kubectl mc get mycluster
+		kubectl-mc get mycluster
 
 		# List a single managed cluster in JSON output format
-		kubectl mc get -o json mycluster`))
+		kubectl-mc get -o json mycluster`))
 )
 
 const (
