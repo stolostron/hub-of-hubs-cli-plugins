@@ -20,7 +20,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/stolostron/hub-of-hubs-cli-plugins/pkg/cmd/get"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 )
 
 var managedClustersExample = `
@@ -34,23 +36,45 @@ var managedClustersExample = `
 // ManagedClustersOptions provides options for ManagedClusters commands
 type ManagedClustersOptions struct {
 	genericclioptions.IOStreams
+	configFlags *genericclioptions.ConfigFlags
 }
 
 // NewManagedClustersOptions provides an instance of ManagedClustersOptions with default values
 func NewManagedClustersOptions(streams genericclioptions.IOStreams) *ManagedClustersOptions {
 	return &ManagedClustersOptions{
-		IOStreams: streams,
+		configFlags: genericclioptions.NewConfigFlags(true),
+		IOStreams:   streams,
 	}
 }
 
 // NewCmdManagedClusters provides a cobra command wrapping ManagedClustersOptions
 func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
+	o := NewManagedClustersOptions(streams)
+
+	defaultConfigFlags := genericclioptions.NewConfigFlags(true).
+		WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).
+		WithDiscoveryQPS(50.0)
+
 	cmd := &cobra.Command{
-		Use:     "kubectl mc [commands] [flags]",
+		Use:     "kubectl mc",
 		Short:   "Operate managed clusters for Hub of Hubs",
 		Example: fmt.Sprintf(managedClustersExample, "kubectl"),
 		Run:     runHelp,
 	}
+
+	flags := cmd.PersistentFlags()
+
+	kubeConfigFlags := o.configFlags
+	if kubeConfigFlags == nil {
+		kubeConfigFlags = defaultConfigFlags
+	}
+	kubeConfigFlags.AddFlags(flags)
+	matchVersionKubeConfigFlags := cmdutil.NewMatchVersionFlags(kubeConfigFlags)
+	matchVersionKubeConfigFlags.AddFlags(flags)
+
+	f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
+
+	cmd.AddCommand(get.NewCmdGet("kubectl", f, o.IOStreams))
 
 	return cmd
 }
