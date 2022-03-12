@@ -62,6 +62,7 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 		Run:     runHelp,
 	}
 
+	cmd.CompletionOptions.DisableDefaultCmd = true
 	flags := cmd.PersistentFlags()
 
 	kubeConfigFlags := o.configFlags
