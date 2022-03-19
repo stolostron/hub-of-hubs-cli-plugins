@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	pluginutil "github.com/stolostron/hub-of-hubs-cli-plugins/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -394,6 +395,18 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	// TODO fix
 	_ = chunkSize
 	r := &resource.Result{}
+
+	config, err := o.configFlags.ToRawKubeConfigLoader().RawConfig()
+	if err != nil {
+		return err
+	}
+
+	apiURL, err := pluginutil.GetNonK8sAPIURL(config)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("apiURL = %s\n", apiURL)
 
 	if o.IgnoreNotFound {
 		r.IgnoreErrors(apierrors.IsNotFound)
