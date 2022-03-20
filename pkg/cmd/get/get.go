@@ -83,6 +83,8 @@ type Options struct {
 
 	genericclioptions.IOStreams
 	configFlags *genericclioptions.ConfigFlags
+
+	nonk8sAPIURL string
 }
 
 var (
@@ -236,6 +238,18 @@ func (o *Options) Complete(cmd *cobra.Command, args []string) error {
 	if o.PrintWithOpenAPICols && o.ServerPrint {
 		fmt.Fprintf(o.IOStreams.ErrOut, "warning: --%s requested, --%s will be ignored\n", useOpenAPIPrintColumnFlagLabel, useServerPrintColumns)
 	}
+
+	config, err := o.configFlags.ToRawKubeConfigLoader().RawConfig()
+	if err != nil {
+		return err
+	}
+
+	o.nonk8sAPIURL, err = pluginutil.GetNonK8sAPIURL(config)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("apiURL = %s\n", o.nonk8sAPIURL)
 
 	return nil
 }
@@ -395,18 +409,6 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	// TODO fix
 	_ = chunkSize
 	r := &resource.Result{}
-
-	config, err := o.configFlags.ToRawKubeConfigLoader().RawConfig()
-	if err != nil {
-		return err
-	}
-
-	apiURL, err := pluginutil.GetNonK8sAPIURL(config)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("apiURL = %s\n", apiURL)
 
 	if o.IgnoreNotFound {
 		r.IgnoreErrors(apierrors.IsNotFound)
