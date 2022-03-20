@@ -34,12 +34,12 @@ func GetNonK8sAPIURL(config api.Config) (string, error) {
 
 	hostWithoutPort := strings.Split(serverURL.Host, ":")[0]
 
-	nonK8sAPIURL := strings.TrimPrefix(hostWithoutPort, "api.")
-	if nonK8sAPIURL == "" {
+	baseDomain := strings.TrimPrefix(hostWithoutPort, "api.")
+	if baseDomain == "" {
 		return "", fmt.Errorf("%w: for %s", errUnknownURLFormat, hostWithoutPort)
 	}
 
-	return nonK8sAPIURL, nil
+	return fmt.Sprintf("%s://multicloud-console.apps.%s", serverURL.Scheme, baseDomain), nil
 }
 
 func getServerURL(config api.Config) (string, error) {
