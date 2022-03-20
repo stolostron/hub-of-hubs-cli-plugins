@@ -85,6 +85,7 @@ type Options struct {
 	configFlags *genericclioptions.ConfigFlags
 
 	nonk8sAPIURL string
+	token        string
 }
 
 var (
@@ -250,6 +251,11 @@ func (o *Options) Complete(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("apiURL = %s\n", o.nonk8sAPIURL)
+
+	o.token, err = pluginutil.GetToken(config)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -15,7 +15,9 @@ import (
 var (
 	errContextNotFound  = errors.New("context not found")
 	errClusterNotFound  = errors.New("cluster not found")
+	errAuthInfoNotFound = errors.New("user not found")
 	errUnknownURLFormat = errors.New("Unknown format for server URL")
+	errNoToken          = errors.New("No Token found")
 )
 
 // GetNonK8sAPIURL returns the URL of Non-K8s API
@@ -52,4 +54,23 @@ func getServerURL(config api.Config) (string, error) {
 	}
 
 	return currentCluster.Server, nil
+}
+
+// GetToken returns the token (if token-authentication is used) from kube config
+func GetToken(config api.Config) (string, error) {
+	currentContext, found := config.Contexts[config.CurrentContext]
+	if !found {
+		return "", fmt.Errorf("%w: for %s", errContextNotFound, config.CurrentContext)
+	}
+
+	currentAuthInfo, found := config.AuthInfos[currentContext.AuthInfo]
+	if !found {
+		return "", fmt.Errorf("%w: for %s", errAuthInfoNotFound, currentContext.AuthInfo)
+	}
+
+	if currentAuthInfo.Token == "" {
+		return "", fmt.Errorf("%w: for %s", errNoToken, currentContext.AuthInfo)
+	}
+
+	return currentAuthInfo.Token, nil
 }
