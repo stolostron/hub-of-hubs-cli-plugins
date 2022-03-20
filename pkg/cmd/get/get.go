@@ -24,9 +24,13 @@ package get
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -107,6 +111,8 @@ var (
 
 		# List a single managed cluster in JSON output format
 		kubectl-mc get -o json mycluster`))
+
+	errStatusNotOK = errors.New("response status not HTTP OK")
 )
 
 const (
@@ -414,6 +420,45 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 
 	// TODO fix
 	_ = chunkSize
+
+	client, err := createClient()
+	if err != nil {
+		return fmt.Errorf("unable to create client: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.TODO(), "GET",
+		fmt.Sprintf("%s/multicloud/hub-of-hubs-nonk8s-api/managedclusters", o.nonk8sAPIURL), nil)
+	if err != nil {
+		return fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", o.token))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("got error: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w: %d", errStatusNotOK, resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("unable to read response body: %w", err)
+	}
+
+	var result []interface{}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshall json: %w", err)
+	}
+
+	fmt.Printf("read result: %v\n", result)
+
 	r := &resource.Result{}
 
 	if o.IgnoreNotFound {
@@ -762,4 +807,15 @@ func multipleGVKsRequested(infos []*resource.Info) bool {
 		}
 	}
 	return false
+}
+
+func createClient() (*http.Client, error) {
+	tlsConfig := &tls.Config{
+		//nolint:gosec
+		InsecureSkipVerify: true,
+	}
+
+	tr := &http.Transport{TLSClientConfig: tlsConfig}
+
+	return &http.Client{Transport: tr}, nil
 }
