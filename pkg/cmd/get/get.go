@@ -464,19 +464,8 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 		return o.printGeneric(objs)
 	}
 
-	r := &resource.Result{}
 	allErrs := []error{}
 	errs := sets.NewString()
-	infos, err := r.Infos()
-	if err != nil {
-		allErrs = append(allErrs, err)
-	}
-	printWithKind := multipleGVKsRequested(infos)
-
-	objs = make([]runtime.Object, len(infos))
-	for ix := range infos {
-		objs[ix] = infos[ix].Object
-	}
 
 	sorting, err := cmd.Flags().GetString("sort-by")
 	if err != nil {
@@ -493,7 +482,7 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	var printer printers.ResourcePrinter
-	var lastMapping *meta.RESTMapping
+	printWithKind := multipleGVKsRequestedForObjects(objs)
 
 	// track if we write any output
 	trackingWriter := &trackingWriterWrapper{Delegate: o.Out}
@@ -502,30 +491,19 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 
 	w := printers.GetNewTabWriter(separatorWriter)
 	for ix := range objs {
-		var mapping *meta.RESTMapping
-		var info *resource.Info
+		var obj runtime.Object
+
 		if positioner != nil {
-			info = infos[positioner.OriginalPosition(ix)]
-			mapping = info.Mapping
+			obj = objs[positioner.OriginalPosition(ix)]
 		} else {
-			info = infos[ix]
-			mapping = info.Mapping
+			obj = objs[ix]
 		}
 
-		if shouldGetNewPrinterForMapping(printer, lastMapping, mapping) {
+		if shouldGetNewPrinterForMapping(printer, nil, nil) {
 			w.Flush()
 			w.SetRememberedWidths(nil)
 
-			// add linebreaks between resource groups (if there is more than one)
-			// when it satisfies all following 3 conditions:
-			// 1) it's not the first resource group
-			// 2) it has row header
-			// 3) we've written output since the last time we started a new set of headers
-			if lastMapping != nil && !o.NoHeaders && trackingWriter.Written > 0 {
-				separatorWriter.SetReady(true)
-			}
-
-			printer, err = o.ToPrinter(mapping, nil, false, printWithKind)
+			printer, err = o.ToPrinter(nil, nil, false, printWithKind)
 			if err != nil {
 				if !errs.Has(err.Error()) {
 					errs.Insert(err.Error())
@@ -533,18 +511,16 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 				}
 				continue
 			}
-
-			lastMapping = mapping
 		}
 
 		// ensure a versioned object is passed to the custom-columns printer
 		// if we are using OpenAPI columns to print
 		if o.PrintWithOpenAPICols {
-			printer.PrintObj(info.Object, w)
+			printer.PrintObj(obj, w)
 			continue
 		}
 
-		printer.PrintObj(info.Object, w)
+		printer.PrintObj(obj, w)
 	}
 	w.Flush()
 	if trackingWriter.Written == 0 && !o.IgnoreNotFound && len(allErrs) == 0 {
@@ -811,6 +787,19 @@ func multipleGVKsRequested(infos []*resource.Info) bool {
 	gvk := infos[0].Mapping.GroupVersionKind
 	for _, info := range infos {
 		if info.Mapping.GroupVersionKind != gvk {
+			return true
+		}
+	}
+	return false
+}
+
+func multipleGVKsRequestedForObjects(objects []runtime.Object) bool {
+	if len(objects) < 2 {
+		return false
+	}
+	gvk := objects[0].GetObjectKind().GroupVersionKind()
+	for _, object := range objects {
+		if object.GetObjectKind().GroupVersionKind() != gvk {
 			return true
 		}
 	}
