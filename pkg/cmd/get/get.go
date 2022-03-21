@@ -89,6 +89,7 @@ type Options struct {
 
 	nonk8sAPIURL string
 	token        string
+	mapping      *meta.RESTMapping
 }
 
 var (
@@ -121,7 +122,7 @@ const (
 
 // NewOptions returns a Options with default chunk size 500.
 func NewOptions(parent string, configFlags *genericclioptions.ConfigFlags,
-	streams genericclioptions.IOStreams) *Options {
+	streams genericclioptions.IOStreams, mapping *meta.RESTMapping) *Options {
 	return &Options{
 		PrintFlags: kubectlget.NewGetPrintFlags(),
 		CmdParent:  parent,
@@ -130,14 +131,15 @@ func NewOptions(parent string, configFlags *genericclioptions.ConfigFlags,
 		IOStreams:   streams,
 		ChunkSize:   cmdutil.DefaultChunkSize,
 		ServerPrint: true,
+		mapping:     mapping,
 	}
 }
 
 // NewCmd creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
 func NewCmd(parent string, configFlags *genericclioptions.ConfigFlags,
-	streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewOptions(parent, configFlags, streams)
+	streams genericclioptions.IOStreams, mapping *meta.RESTMapping) *cobra.Command {
+	o := NewOptions(parent, configFlags, streams, mapping)
 
 	cmd := &cobra.Command{
 		Use: fmt.Sprintf("get [(-o|--output=)%s] [NAME | -l label] [flags]",
@@ -482,7 +484,6 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	var printer printers.ResourcePrinter
-	printWithKind := multipleGVKsRequestedForObjects(objs)
 
 	// track if we write any output
 	trackingWriter := &trackingWriterWrapper{Delegate: o.Out}
@@ -490,42 +491,38 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	separatorWriter := &separatorWriterWrapper{Delegate: trackingWriter}
 
 	w := printers.GetNewTabWriter(separatorWriter)
-	for ix := range objs {
-		var obj runtime.Object
+	printer, err = o.ToPrinter(o.mapping, nil, false, false)
 
-		if positioner != nil {
-			obj = objs[positioner.OriginalPosition(ix)]
-		} else {
-			obj = objs[ix]
+	if err != nil {
+		if !errs.Has(err.Error()) {
+			errs.Insert(err.Error())
+			allErrs = append(allErrs, err)
 		}
+	} else {
+		for ix := range objs {
+			var obj runtime.Object
 
-		if shouldGetNewPrinterForMapping(printer, nil, nil) {
-			w.Flush()
-			w.SetRememberedWidths(nil)
+			if positioner != nil {
+				obj = objs[positioner.OriginalPosition(ix)]
+			} else {
+				obj = objs[ix]
+			}
 
-			printer, err = o.ToPrinter(nil, nil, false, printWithKind)
-			if err != nil {
-				if !errs.Has(err.Error()) {
-					errs.Insert(err.Error())
-					allErrs = append(allErrs, err)
-				}
+			// ensure a versioned object is passed to the custom-columns printer
+			// if we are using OpenAPI columns to print
+			if o.PrintWithOpenAPICols {
+				printer.PrintObj(obj, w)
 				continue
 			}
-		}
 
-		// ensure a versioned object is passed to the custom-columns printer
-		// if we are using OpenAPI columns to print
-		if o.PrintWithOpenAPICols {
 			printer.PrintObj(obj, w)
-			continue
 		}
-
-		printer.PrintObj(obj, w)
 	}
 	w.Flush()
 	if trackingWriter.Written == 0 && !o.IgnoreNotFound && len(allErrs) == 0 {
 		fmt.Fprintln(o.ErrOut, "No resources found")
 	}
+
 	return utilerrors.NewAggregate(allErrs)
 }
 
