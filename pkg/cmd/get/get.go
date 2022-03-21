@@ -36,7 +36,6 @@ import (
 	"github.com/spf13/cobra"
 	pluginutil "github.com/stolostron/hub-of-hubs-cli-plugins/pkg/util"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -445,6 +444,10 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	}
 	defer resp.Body.Close()
 
+	if o.IgnoreNotFound && resp.StatusCode != http.StatusNotFound {
+		return nil
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("%w: %d", errStatusNotOK, resp.StatusCode)
 	}
@@ -463,15 +466,9 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("read result: %v\n", result)
 
+	fmt.Printf("args = %v\n", args)
+
 	r := &resource.Result{}
-
-	if o.IgnoreNotFound {
-		r.IgnoreErrors(apierrors.IsNotFound)
-	}
-	if err := r.Err(); err != nil {
-		return err
-	}
-
 	if !o.IsHumanReadablePrinter {
 		return o.printGeneric(r)
 	}
