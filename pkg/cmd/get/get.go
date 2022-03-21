@@ -455,13 +455,13 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to read response body: %w", err)
 	}
 
-	objects, err := getObjects(body)
+	objs, err := getObjects(body)
 	if err != nil {
 		return fmt.Errorf("unable to get objects from the body: %w", err)
 	}
 
 	if !o.IsHumanReadablePrinter {
-		return o.printGeneric(objects)
+		return o.printGeneric(objs)
 	}
 
 	r := &resource.Result{}
@@ -473,7 +473,7 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	}
 	printWithKind := multipleGVKsRequested(infos)
 
-	objs := make([]runtime.Object, len(infos))
+	objs = make([]runtime.Object, len(infos))
 	for ix := range infos {
 		objs[ix] = infos[ix].Object
 	}
