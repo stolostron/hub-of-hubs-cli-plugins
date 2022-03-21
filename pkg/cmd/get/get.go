@@ -457,20 +457,22 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to read response body: %w", err)
 	}
 
-	result, err := getObjects(body)
+	objects, err := getObjects(body)
 	if err != nil {
-		return fmt.Errorf("unable to parse response body: %w", err)
+		return fmt.Errorf("unable to get objects from the body: %w", err)
 	}
 
-	fmt.Printf("read result: %v\n", result)
+	for index, object := range objects {
+		fmt.Printf("object[%d]: %v\n", index, object.GetObjectKind().GroupVersionKind())
+	}
 
 	fmt.Printf("args = %v\n", args)
 
-	r := &resource.Result{}
 	if !o.IsHumanReadablePrinter {
-		return o.printGeneric(r)
+		return o.printGeneric(objects)
 	}
 
+	r := &resource.Result{}
 	allErrs := []error{}
 	errs := sets.NewString()
 	infos, err := r.Infos()
@@ -559,15 +561,31 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	return utilerrors.NewAggregate(allErrs)
 }
 
-func getObjects(rawBytes []byte) ([]interface{}, error) {
-	var result []interface{}
+func getObjects(rawBytes []byte) ([]runtime.Object, error) {
+	var results []interface{}
 
-	err := json.Unmarshal(rawBytes, &result)
+	err := json.Unmarshal(rawBytes, &results)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshall json: %w", err)
 	}
 
-	return result, nil
+	var objects []runtime.Object
+
+	for _, result := range results {
+		resultData, err := json.Marshal(result)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshall json: %w", err)
+		}
+
+		converted, err := runtime.Decode(unstructured.UnstructuredJSONScheme, resultData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode: %w", err)
+		}
+
+		objects = append(objects, converted)
+	}
+
+	return objects, nil
 }
 
 type trackingWriterWrapper struct {
@@ -696,22 +714,10 @@ func (o *Options) watch(f cmdutil.Factory, cmd *cobra.Command, args []string) er
 	return nil
 }
 
-func (o *Options) printGeneric(r *resource.Result) error {
-	// we flattened the data from the builder, so we have individual items, but now we'd like to either:
-	// 1. if there is more than one item, combine them all into a single list
-	// 2. if there is a single item and that item is a list, leave it as its specific list
-	// 3. if there is a single item and it is not a list, leave it as a single item
+func (o *Options) printGeneric(objects []runtime.Object) error {
 	var errs []error
-	singleItemImplied := false
-	infos, err := r.IntoSingleItemImplied(&singleItemImplied).Infos()
-	if err != nil {
-		if singleItemImplied {
-			return err
-		}
-		errs = append(errs, err)
-	}
 
-	if len(infos) == 0 && o.IgnoreNotFound {
+	if len(objects) == 0 && o.IgnoreNotFound {
 		return utilerrors.Reduce(utilerrors.Flatten(utilerrors.NewAggregate(errs)))
 	}
 
@@ -721,7 +727,7 @@ func (o *Options) printGeneric(r *resource.Result) error {
 	}
 
 	var obj runtime.Object
-	if !singleItemImplied || len(infos) != 1 {
+	if len(objects) != 1 {
 		// we have zero or multple items, so coerce all items into a list.
 		// we don't want an *unstructured.Unstructured list yet, as we
 		// may be dealing with non-unstructured objects. Compose all items
@@ -733,8 +739,8 @@ func (o *Options) printGeneric(r *resource.Result) error {
 			},
 			ListMeta: metav1.ListMeta{},
 		}
-		for _, info := range infos {
-			list.Items = append(list.Items, runtime.RawExtension{Object: info.Object})
+		for _, object := range objects {
+			list.Items = append(list.Items, runtime.RawExtension{Object: object})
 		}
 
 		listData, err := json.Marshal(list)
@@ -749,7 +755,7 @@ func (o *Options) printGeneric(r *resource.Result) error {
 
 		obj = converted
 	} else {
-		obj = infos[0].Object
+		obj = objects[0]
 	}
 
 	isList := meta.IsListType(obj)
