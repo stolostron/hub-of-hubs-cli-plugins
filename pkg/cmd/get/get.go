@@ -457,11 +457,9 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to read response body: %w", err)
 	}
 
-	var result []interface{}
-
-	err = json.Unmarshal(body, &result)
+	result, err := getObjects(body)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshall json: %w", err)
+		return fmt.Errorf("unable to parse response body: %w", err)
 	}
 
 	fmt.Printf("read result: %v\n", result)
@@ -559,6 +557,17 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(o.ErrOut, "No resources found")
 	}
 	return utilerrors.NewAggregate(allErrs)
+}
+
+func getObjects(rawBytes []byte) ([]interface{}, error) {
+	var result []interface{}
+
+	err := json.Unmarshal(rawBytes, &result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshall json: %w", err)
+	}
+
+	return result, nil
 }
 
 type trackingWriterWrapper struct {
