@@ -255,8 +255,6 @@ func (o *Options) Complete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("apiURL = %s\n", o.nonk8sAPIURL)
-
 	o.token, err = pluginutil.GetToken(config)
 	if err != nil {
 		return err
@@ -461,12 +459,6 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("unable to get objects from the body: %w", err)
 	}
-
-	for index, object := range objects {
-		fmt.Printf("object[%d]: %v\n", index, object.GetObjectKind().GroupVersionKind())
-	}
-
-	fmt.Printf("args = %v\n", args)
 
 	if !o.IsHumanReadablePrinter {
 		return o.printGeneric(objects)
