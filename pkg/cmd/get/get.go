@@ -817,6 +817,10 @@ func createClient() (*http.Client, error) {
 	}
 
 	tr := &http.Transport{TLSClientConfig: tlsConfig}
+	client := &http.Client{
+		Transport:     tr,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 
-	return &http.Client{Transport: tr}, nil
+	return client, nil
 }
