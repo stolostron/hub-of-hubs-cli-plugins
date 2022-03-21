@@ -149,7 +149,7 @@ func NewCmd(parent string, configFlags *genericclioptions.ConfigFlags,
 		Example:               getExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdutil.CheckErr(o.Complete(cmd, args))
-			cmdutil.CheckErr(o.Validate(cmd))
+			cmdutil.CheckErr(o.Validate(cmd, args))
 			cmdutil.CheckErr(o.Run(cmd, args))
 		},
 		SuggestFor: []string{"list", "ps"},
@@ -267,7 +267,7 @@ func (o *Options) Complete(cmd *cobra.Command, args []string) error {
 }
 
 // Validate checks the set of flags provided by the user.
-func (o *Options) Validate(cmd *cobra.Command) error {
+func (o *Options) Validate(cmd *cobra.Command, args []string) error {
 	if cmdutil.GetFlagBool(cmd, "show-labels") {
 		outputOption := cmd.Flags().Lookup("output").Value.String()
 		if outputOption != "" && outputOption != "wide" {
@@ -276,6 +276,10 @@ func (o *Options) Validate(cmd *cobra.Command) error {
 	}
 	if o.OutputWatchEvents && !o.Watch {
 		return cmdutil.UsageErrorf(cmd, "--output-watch-events option can only be used with --watch")
+	}
+
+	if len(args) > 0 {
+		return cmdutil.UsageErrorf(cmd, "currently, only getting all the clusters is supported")
 	}
 	return nil
 }
