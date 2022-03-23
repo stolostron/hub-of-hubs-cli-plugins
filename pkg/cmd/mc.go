@@ -21,7 +21,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stolostron/hub-of-hubs-cli-plugins/pkg/cmd/get"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
 var managedClustersExample = `
@@ -46,6 +49,12 @@ func NewManagedClustersOptions(streams genericclioptions.IOStreams) *ManagedClus
 	}
 }
 
+type restScope struct{}
+
+func (restScope) Name() meta.RESTScopeName {
+	return meta.RESTScopeNameRoot
+}
+
 // NewCmdManagedClusters provides a cobra command wrapping ManagedClustersOptions
 func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewManagedClustersOptions(streams)
@@ -59,7 +68,22 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	cmd.CompletionOptions.DisableDefaultCmd = true
-	cmd.AddCommand(get.NewCmd("kubectl-mc", o.configFlags, o.IOStreams, nil))
+
+	mapping := &meta.RESTMapping{
+		Resource: schema.GroupVersionResource{
+			Group:    clusterv1.GroupName,
+			Version:  clusterv1.GroupVersion.Version,
+			Resource: "managedclusters",
+		},
+		GroupVersionKind: schema.GroupVersionKind{
+			Group:   clusterv1.GroupName,
+			Version: clusterv1.GroupVersion.Version,
+			Kind:    "ManagedCluster",
+		},
+		Scope: restScope{},
+	}
+
+	cmd.AddCommand(get.NewCmd("kubectl-mc", o.configFlags, o.IOStreams, mapping))
 
 	o.configFlags.AddFlags(cmd.PersistentFlags())
 

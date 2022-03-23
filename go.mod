@@ -11,6 +11,7 @@ require (
 	k8s.io/client-go v0.23.4
 	k8s.io/kubectl v0.23.4
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
+	open-cluster-management.io/api v0.5.1-0.20220112073018-2d280a97a052
 )
 
 require (
@@ -50,6 +51,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
+	github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
