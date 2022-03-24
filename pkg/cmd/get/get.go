@@ -137,7 +137,7 @@ func NewOptions(parent string, configFlags *genericclioptions.ConfigFlags,
 
 // NewCmd creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmd(parent string, configFlags *genericclioptions.ConfigFlags,
+func NewCmd(parent string, f cmdutil.Factory, configFlags *genericclioptions.ConfigFlags,
 	streams genericclioptions.IOStreams, mapping *meta.RESTMapping) *cobra.Command {
 	o := NewOptions(parent, configFlags, streams, mapping)
 
@@ -149,7 +149,7 @@ func NewCmd(parent string, configFlags *genericclioptions.ConfigFlags,
 		Long:                  getLong,
 		Example:               getExample,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmdutil.CheckErr(o.Complete(cmd, args))
+			cmdutil.CheckErr(o.Complete(f, cmd, args))
 			cmdutil.CheckErr(o.Validate(cmd, args))
 			cmdutil.CheckErr(o.Run(cmd, args))
 		},
@@ -172,7 +172,7 @@ func NewCmd(parent string, configFlags *genericclioptions.ConfigFlags,
 }
 
 // Complete takes the command arguments and factory and infers any remaining options.
-func (o *Options) Complete(cmd *cobra.Command, args []string) error {
+func (o *Options) Complete(f cmdutil.Factory, cmd *cobra.Command, args []string) error {
 	var err error
 
 	sortBy, err := cmd.Flags().GetString("sort-by")
@@ -205,6 +205,11 @@ func (o *Options) Complete(cmd *cobra.Command, args []string) error {
 		printFlags := o.PrintFlags.Copy()
 
 		if mapping != nil {
+			if !cmdSpecifiesOutputFmt(cmd) && o.PrintWithOpenAPICols {
+				if apiSchema, err := f.OpenAPISchema(); err == nil {
+					printFlags.UseOpenAPIColumns(apiSchema, mapping)
+				}
+			}
 			printFlags.SetKind(mapping.GroupVersionKind.GroupKind())
 		}
 		if withNamespace {

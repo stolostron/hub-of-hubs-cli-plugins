@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -34,6 +35,7 @@ var managedClustersExample = `
 	# label a managed cluster
 	%[1]s label mycluster environment=dev
 `
+var defaultConfigFlags = genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).WithDiscoveryQPS(50.0)
 
 // ManagedClustersOptions provides options for ManagedClusters commands
 type ManagedClustersOptions struct {
@@ -82,10 +84,20 @@ func NewCmdManagedClusters(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 		Scope: restScope{},
 	}
+	flags := cmd.PersistentFlags()
 
-	cmd.AddCommand(get.NewCmd("kubectl-mc", o.configFlags, o.IOStreams, mapping))
+	kubeConfigFlags := o.configFlags
+	if kubeConfigFlags == nil {
+		kubeConfigFlags = defaultConfigFlags
+		kubeConfigFlags.AddFlags(flags)
+	}
+	matchVersionKubeConfigFlags := cmdutil.NewMatchVersionFlags(kubeConfigFlags)
+	matchVersionKubeConfigFlags.AddFlags(flags)
 
-	o.configFlags.AddFlags(cmd.PersistentFlags())
+	f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
+
+	o.configFlags.AddFlags(flags)
+	cmd.AddCommand(get.NewCmd("kubectl-mc", f, o.configFlags, o.IOStreams, mapping))
 
 	return cmd
 }
