@@ -443,6 +443,15 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", o.token))
 
+	if o.ServerPrint {
+		req.Header.Add("Accept", strings.Join([]string{
+			fmt.Sprintf("application/json;as=Table;v=%s;g=%s", metav1.SchemeGroupVersion.Version, metav1.GroupName),
+			"application/json",
+		}, ","))
+	} else {
+		req.Header.Add("Accept", "application/json")
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("got error: %w", err)
