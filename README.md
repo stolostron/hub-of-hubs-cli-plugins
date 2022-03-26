@@ -1,5 +1,9 @@
 # hub-of-hubs-cli-plugins
-Kubectl plugins for hub-of-hubs
+Kubectl plugins for Hub-of-Hubs
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/stolostron/hub-of-hubs-cli-plugins)](https://goreportcard.com/report/github.com/stolostron/hub-of-hubs-cli-plugins)
+[![Go Reference](https://pkg.go.dev/badge/github.com/stolostron/hub-of-hubs-cli-plugins.svg)](https://pkg.go.dev/github.com/stolostron/hub-of-hubs-cli-plugins)
+[![License](https://img.shields.io/github/license/stolostron/hub-of-hubs-cli-plugins)](/LICENSE)
 
 ## Build
 
