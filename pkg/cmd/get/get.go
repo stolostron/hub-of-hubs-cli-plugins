@@ -545,7 +545,12 @@ func getObjects(rawBytes []byte) ([]runtime.Object, error) {
 
 	err := json.Unmarshal(rawBytes, &results)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshall json: %w", err)
+		var result interface{}
+		err := json.Unmarshal(rawBytes, &result)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshall json: %w", err)
+		}
+		results = append(results, result)
 	}
 
 	var objects []runtime.Object
