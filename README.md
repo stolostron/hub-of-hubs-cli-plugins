@@ -24,5 +24,5 @@ $ make
 2. Run:
 
    ```
-   kubectl mc
+   kubectl mcl
    ```

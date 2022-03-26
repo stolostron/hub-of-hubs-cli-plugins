@@ -35,7 +35,7 @@ clean-vendor:
 
 .PHONY: build			##builds the controller
 build:
-	@go build -o bin/kubectl-mc cmd/kubectl-mc.go
+	@go build -o bin/kubectl-mcl cmd/kubectl-mcl.go
 
 .PHONY: clean			##cleans the build directories
 clean:
