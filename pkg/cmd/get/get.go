@@ -90,6 +90,7 @@ type Options struct {
 	nonk8sAPIURL string
 	token        string
 	mapping      *meta.RESTMapping
+	resourcePath string
 }
 
 var (
@@ -122,30 +123,32 @@ const (
 
 // NewOptions returns a Options with default chunk size 500.
 func NewOptions(parent string, configFlags *genericclioptions.ConfigFlags,
-	streams genericclioptions.IOStreams, mapping *meta.RESTMapping) *Options {
+	streams genericclioptions.IOStreams, mapping *meta.RESTMapping,
+	resourcePath string) *Options {
 	return &Options{
 		PrintFlags: kubectlget.NewGetPrintFlags(),
 		CmdParent:  parent,
 
-		configFlags: configFlags,
-		IOStreams:   streams,
-		ChunkSize:   cmdutil.DefaultChunkSize,
-		ServerPrint: true,
-		mapping:     mapping,
+		configFlags:  configFlags,
+		IOStreams:    streams,
+		ChunkSize:    cmdutil.DefaultChunkSize,
+		ServerPrint:  true,
+		mapping:      mapping,
+		resourcePath: resourcePath,
 	}
 }
 
 // NewCmd creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
 func NewCmd(parent string, f cmdutil.Factory, configFlags *genericclioptions.ConfigFlags,
-	streams genericclioptions.IOStreams, mapping *meta.RESTMapping) *cobra.Command {
-	o := NewOptions(parent, configFlags, streams, mapping)
+	streams genericclioptions.IOStreams, mapping *meta.RESTMapping, resourcePath, resourceNamePlural string) *cobra.Command {
+	o := NewOptions(parent, configFlags, streams, mapping, resourcePath)
 
 	cmd := &cobra.Command{
 		Use: fmt.Sprintf("get [(-o|--output=)%s] [NAME | -l label] [flags]",
 			strings.Join(o.PrintFlags.AllowedFormats(), "|")),
 		DisableFlagsInUseLine: true,
-		Short:                 i18n.T("Display one or many managed clusters"),
+		Short:                 i18n.T("Display one or many " + resourceNamePlural),
 		Long:                  getLong,
 		Example:               getExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -435,7 +438,7 @@ func (o *Options) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	req, err := http.NewRequestWithContext(context.TODO(), "GET",
-		fmt.Sprintf("%s/multicloud/hub-of-hubs-nonk8s-api/managedclusters", o.nonk8sAPIURL), nil)
+		fmt.Sprintf("%s/multicloud/hub-of-hubs-nonk8s-api/%s", o.nonk8sAPIURL, o.resourcePath), nil)
 	if err != nil {
 		return fmt.Errorf("unable to create request: %w", err)
 	}
